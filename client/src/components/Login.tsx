@@ -65,64 +65,129 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-form">
-        <h2>{isSignUp ? 'Create Account' : 'Login'}</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email:</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="password">Password:</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              minLength={6}
-            />
-          </div>
-
-          {isSignUp && (
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password:</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
+    <div className="login-page">
+      <div className="login-background">
+        <div className="background-shapes">
+          <div className="shape shape-1"></div>
+          <div className="shape shape-2"></div>
+          <div className="shape shape-3"></div>
+        </div>
+      </div>
+      
+      <div className="login-container">
+        <div className="login-card">
+          {/* Header */}
+          <div className="login-header">
+            <div className="app-logo">
+              <span className="logo-icon">📰</span>
+              <h1 className="logo-text">NewsPersonal</h1>
             </div>
-          )}
+            <p className="login-subtitle">
+              {isSignUp ? 'Create your account to get started' : 'Welcome back! Please sign in to continue'}
+            </p>
+          </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="input-group">
+              <label htmlFor="email" className="input-label">
+                Email Address
+              </label>
+              <div className="input-wrapper">
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="input-field"
+                  placeholder="Enter your email"
+                />
+                <span className="input-icon">📧</span>
+              </div>
+            </div>
+            
+            <div className="input-group">
+              <label htmlFor="password" className="input-label">
+                Password
+              </label>
+              <div className="input-wrapper">
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                  className="input-field"
+                  placeholder="Enter your password"
+                />
+                <span className="input-icon">🔒</span>
+              </div>
+            </div>
 
-          <button type="submit" disabled={loading} className="login-button">
-            {loading ? (isSignUp ? 'Creating Account...' : 'Logging in...') : (isSignUp ? 'Create Account' : 'Login')}
-          </button>
-        </form>
+            {isSignUp && (
+              <div className="input-group">
+                <label htmlFor="confirmPassword" className="input-label">
+                  Confirm Password
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    minLength={6}
+                    className="input-field"
+                    placeholder="Confirm your password"
+                  />
+                  <span className="input-icon">🔐</span>
+                </div>
+              </div>
+            )}
 
-        <div className="toggle-container">
-          <p className="toggle-text">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-          </p>
-          <button onClick={toggleMode} className="toggle-button">
-            {isSignUp ? 'Login here' : 'Sign up here'}
-          </button>
+            {error && (
+              <div className="error-message">
+                <span className="error-icon">⚠️</span>
+                {error}
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={loading || !email || !password} 
+              className="submit-button"
+            >
+              {loading ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  {isSignUp ? 'Creating Account...' : 'Signing In...'}
+                </>
+              ) : (
+                <>
+                  <span className="button-icon">{isSignUp ? '🚀' : '🔑'}</span>
+                  {isSignUp ? 'Create Account' : 'Sign In'}
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Toggle */}
+          <div className="login-footer">
+            <div className="divider">
+              <span className="divider-text">or</span>
+            </div>
+            <p className="toggle-text">
+              {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+            </p>
+            <button onClick={toggleMode} className="toggle-button" disabled={loading}>
+              {isSignUp ? 'Sign In Instead' : 'Create New Account'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
