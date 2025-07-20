@@ -1,3 +1,10 @@
+## server
+Authentication/
+.env
+
+## client 
+firebase/
+
 # Logs
 logs
 *.log
