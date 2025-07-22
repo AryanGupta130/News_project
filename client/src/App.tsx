@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { auth } from './firebase/config';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import UserPreferences from './components/UserPreferences';
 import './App.css';
 
 function App() {
@@ -18,9 +18,13 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleLoginSuccess = (email: string) => {
-    // This function will be called if we need to handle login success manually
-    console.log('Login successful for:', email);
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   if (loading) {
@@ -34,9 +38,9 @@ function App() {
   return (
     <div className="App">
       {user ? (
-        <Dashboard user={user.uid} onLogout={() => setUser(null)} />
+        <UserPreferences user={user.email || 'User'} onLogout={handleLogout} />
       ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
+        <Login onLoginSuccess={() => {}} /* onLoginSuccess is no longer needed */ />
       )}
     </div>
   );

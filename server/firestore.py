@@ -1,6 +1,8 @@
+from time import timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
+from datetime import datetime, timezone  # Update this import line
 
 # Initialize Firebase Admin SDK
 def initialize_firebase():
@@ -23,14 +25,23 @@ class FirestoreService:
     def get_user_preferences(self, user_id: str):
         """Get user preferences from Firestore"""
         try:
+            if not self.db:
+                print("Firestore not available - returning None")
+                return None
+                
             doc_ref = self.db.collection('users').document(user_id)
             doc = doc_ref.get()
             
             if doc.exists:
                 data = doc.to_dict()
-                return data.get('preferences', None)
+                # Fix: Check if data is not None and has preferences
+                if data and 'preferences' in data:
+                    return data['preferences']
+                else:
+                    print(f"No preferences found in document for user: {user_id}")
+                    return None
             else:
-                print(f"No preferences found for user: {user_id}")
+                print(f"No document found for user: {user_id}")
                 return None
         except Exception as e:
             print(f"Error getting user preferences: {e}")
@@ -39,50 +50,20 @@ class FirestoreService:
     def save_user_preferences(self, user_id: str, preferences: dict):
         """Save user preferences to Firestore"""
         try:
+            if not self.db:
+                print("Firestore not available - preferences not saved")
+                return False
+                
             doc_ref = self.db.collection('users').document(user_id)
             doc_ref.set({
                 'preferences': preferences,
-                'last_updated': firestore.SERVER_TIMESTAMP
+                'last_updated': datetime.now(timezone.utc)
             }, merge=True)
             print(f"✅ Preferences saved for user: {user_id}")
             return True
         except Exception as e:
             print(f"Error saving preferences: {e}")
             return False
-    
-    def save_processed_news(self, user_id: str, processed_articles: list):
-        """Save AI-processed news articles for a user"""
-        try:
-            doc_ref = self.db.collection('users').document(user_id)
-            doc_ref.update({
-                'processed_news': processed_articles,
-                'last_news_update': firestore.SERVER_TIMESTAMP
-            })
-            print(f"✅ Processed news saved for user: {user_id}")
-            return True
-        except Exception as e:
-            print(f"Error saving processed news: {e}")
-            return False
-    
-    def get_all_users_for_processing(self):
-        """Get all users who have preferences set for news processing"""
-        try:
-            users_ref = self.db.collection('users')
-            docs = users_ref.where('preferences.newsInterests', '>', '').get()
-            
-            users = []
-            for doc in docs:
-                user_data = doc.to_dict()
-                users.append({
-                    'user_id': doc.id,
-                    'preferences': user_data.get('preferences', {}),
-                    'last_updated': user_data.get('last_updated')
-                })
-            
-            return users
-        except Exception as e:
-            print(f"Error getting users for processing: {e}")
-            return []
 
 # Create a global instance
 firestore_service = FirestoreService()

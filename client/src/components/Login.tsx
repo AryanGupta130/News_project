@@ -3,10 +3,10 @@ import { authService } from '../firebase/authService';
 import './Login.css';
 
 interface LoginProps {
-  onLoginSuccess: (user: string) => void;
+  onLoginSuccess?: (user: string) => void; // Made optional since we're using Firebase auth state
 }
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess = () => {} }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

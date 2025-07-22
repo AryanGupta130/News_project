@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, session, render_template, request, redirect, url_for
 from flask_cors import CORS
 from firestore import firestore_service  # Import our Firestore service
-from news_service import news_service  # Import our News service
 import os
 from dotenv import load_dotenv
 
@@ -63,72 +62,6 @@ def get_preferences(user_id):
             
     except Exception as e:
         print(f"Error in get_preferences: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route("/api/process-news", methods=['POST'])
-def process_news():
-    """Process news for a specific user based on their preferences using LLM"""
-    try:
-        data = request.get_json()
-        user_id = data.get('user_id')
-        
-        if not user_id:
-            return jsonify({'error': 'Missing user_id'}), 400
-        
-        # Get user preferences
-        preferences = firestore_service.get_user_preferences(user_id)
-        
-        if not preferences:
-            return jsonify({'error': 'User preferences not found'}), 404
-        
-        print(f"Processing news for user {user_id} with preferences: {preferences}")
-        
-        # Process news with our intelligent news service
-        curated_articles = news_service.process_news_for_user(preferences)
-        
-        if not curated_articles:
-            return jsonify({
-                'success': False,
-                'error': 'Unable to fetch news at this time. Please try again later.'
-            }), 500
-        
-        # Save processed news to Firestore
-        firestore_service.save_processed_news(user_id, curated_articles)
-        
-        return jsonify({
-            'success': True,
-            'articles': curated_articles,
-            'message': f'Successfully curated {len(curated_articles)} personalized articles',
-            'total_articles': len(curated_articles)
-        })
-        
-    except Exception as e:
-        print(f"Error in process_news: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route("/api/users/batch-process", methods=['POST'])
-def batch_process_all_users():
-    """Process news for all users (for scheduled jobs)"""
-    try:
-        users = firestore_service.get_all_users_for_processing()
-        processed_count = 0
-        
-        for user in users:
-            user_id = user['user_id']
-            preferences = user['preferences']
-            
-            # TODO: Process each user's preferences and fetch news
-            # For now, just log
-            print(f"Processing news for user: {user_id}")
-            processed_count += 1
-        
-        return jsonify({
-            'success': True,
-            'message': f'Processed news for {processed_count} users'
-        })
-        
-    except Exception as e:
-        print(f"Error in batch_process_all_users: {e}")
         return jsonify({'error': str(e)}), 500
 
 # Your existing routes...
