@@ -34,7 +34,7 @@ function App() {
   return (
     <div className="App">
       {user ? (
-        <Dashboard user={user.email || ''} onLogout={() => setUser(null)} />
+        <Dashboard user={user.uid} onLogout={() => setUser(null)} />
       ) : (
         <Login onLoginSuccess={handleLoginSuccess} />
       )}

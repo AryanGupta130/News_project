@@ -1,7 +1,7 @@
 ## server
 Authentication/
 .env
-
+authenticate.json
 ## client 
 firebase/
 

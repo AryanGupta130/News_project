@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authService } from '../firebase/authService';
+import { apiService, type UserPreferences, type NewsArticle } from '../api/services';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -9,10 +10,60 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [newsPreferences, setNewsPreferences] = useState('');
-  const [readingFormat, setReadingFormat] = useState('summary');
-  const [deliveryTime, setDeliveryTime] = useState('morning');
+  const [readingFormat, setReadingFormat] = useState<'summary' | 'full' | 'headlines'>('summary');
+  const [deliveryTime, setDeliveryTime] = useState<'morning' | 'afternoon' | 'evening'>('morning');
   const [isLoading, setIsLoading] = useState(false);
   const [hasPreferences, setHasPreferences] = useState(false);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [loadingNews, setLoadingNews] = useState(false);
+  const [error, setError] = useState('');
+
+  // Load user preferences on component mount
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        setIsLoading(true);
+        const result = await apiService.getUserPreferences(user);
+        
+        if (result.success && result.preferences) {
+          setNewsPreferences(result.preferences.newsInterests);
+          setReadingFormat(result.preferences.readingFormat);
+          setDeliveryTime(result.preferences.deliveryTime);
+          setHasPreferences(true);
+          
+          // Load news articles for this user
+          loadNewsArticles();
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+        setError('Failed to load your preferences');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      loadUserPreferences();
+    }
+  }, [user]);
+
+  const loadNewsArticles = async () => {
+    try {
+      setLoadingNews(true);
+      const result = await apiService.processNewsForUser(user);
+      
+      if (result.success && result.articles) {
+        setNewsArticles(result.articles);
+      } else {
+        setError(result.error || 'Failed to load news articles');
+      }
+    } catch (error) {
+      console.error('Error loading news:', error);
+      setError('Failed to load news articles');
+    } finally {
+      setLoadingNews(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -28,12 +79,36 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   };
 
   const handleSavePreferences = async () => {
+    if (!newsPreferences.trim()) {
+      setError('Please enter your news interests');
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: Save preferences to backend
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const preferences: UserPreferences = {
+        newsInterests: newsPreferences.trim(),
+        readingFormat,
+        deliveryTime
+      };
+
+      const result = await apiService.saveUserPreferences(user, preferences);
+      
+      if (result.success) {
+        setHasPreferences(true);
+        // Load news articles after saving preferences
+        loadNewsArticles();
+      } else {
+        setError(result.error || 'Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      setError('Failed to save preferences');
+    } finally {
       setIsLoading(false);
-      setHasPreferences(true);
-    }, 1500);
+    }
   };
 
   const handleEditPreferences = () => {
@@ -97,13 +172,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   <select
                     id="format"
                     value={readingFormat}
-                    onChange={(e) => setReadingFormat(e.target.value)}
+                    onChange={(e) => setReadingFormat(e.target.value as 'summary' | 'full' | 'headlines')}
                     className="form-select"
                   >
                     <option value="summary">Quick summaries (2-3 sentences)</option>
-                    <option value="detailed">Detailed articles</option>
-                    <option value="bullet">Bullet points</option>
-                    <option value="digest">Daily digest format</option>
+                    <option value="full">Detailed articles</option>
+                    <option value="headlines">Headlines only</option>
                   </select>
                 </div>
 
@@ -114,13 +188,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   <select
                     id="delivery"
                     value={deliveryTime}
-                    onChange={(e) => setDeliveryTime(e.target.value)}
+                    onChange={(e) => setDeliveryTime(e.target.value as 'morning' | 'afternoon' | 'evening')}
                     className="form-select"
                   >
                     <option value="morning">Morning (8:00 AM)</option>
                     <option value="afternoon">Afternoon (1:00 PM)</option>
                     <option value="evening">Evening (6:00 PM)</option>
-                    <option value="realtime">Real-time updates</option>
                   </select>
                 </div>
               </div>
@@ -163,6 +236,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         ) : (
           /* Dashboard View */
           <div className="news-dashboard">
+            {error && (
+              <div className="error-message">
+                <p>⚠️ {error}</p>
+                <button onClick={() => setError('')} className="dismiss-error">Dismiss</button>
+              </div>
+            )}
+            
             <div className="dashboard-content">
               <div className="preferences-summary">
                 <h3>Your News Preferences</h3>
@@ -177,12 +257,95 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
 
               <div className="news-section">
-                <h3>Today's News for You</h3>
-                <div className="coming-soon">
-                  <div className="coming-soon-icon">🚧</div>
-                  <h4>News Feed Coming Soon!</h4>
-                  <p>We're setting up your personalized news feed based on your preferences.</p>
+                <div className="news-header">
+                  <h3>Today's News for You</h3>
+                  <button 
+                    onClick={loadNewsArticles} 
+                    disabled={loadingNews}
+                    className="refresh-btn"
+                  >
+                    {loadingNews ? '🔄 Loading...' : '🔄 Refresh News'}
+                  </button>
                 </div>
+                
+                {loadingNews ? (
+                  <div className="loading-news">
+                    <div className="loading-spinner">⏳</div>
+                    <p>Our AI is curating personalized news just for you...</p>
+                    <div className="loading-steps">
+                      <div className="step">📰 Scanning latest articles</div>
+                      <div className="step">🤖 Analyzing with AI</div>
+                      <div className="step">✨ Personalizing content</div>
+                    </div>
+                  </div>
+                ) : newsArticles.length > 0 ? (
+                  <div className="articles-container">
+                    <div className="articles-header">
+                      <p className="articles-subtitle">
+                        ✨ {newsArticles.length} articles curated specifically for your interests
+                      </p>
+                    </div>
+                    <div className="articles-grid">
+                      {newsArticles.map((article, index) => (
+                        <div key={index} className="article-card premium">
+                          <div className="article-badge">
+                            {article.relevance_score && (
+                              <span className="relevance-badge">
+                                {Math.round(article.relevance_score * 100)}% match
+                              </span>
+                            )}
+                            <span className="source-badge">{article.source}</span>
+                          </div>
+                          
+                          <h4 className="article-title">{article.title}</h4>
+                          
+                          <p className="article-summary">{article.summary}</p>
+                          
+                          {article.why_relevant && (
+                            <div className="relevance-explanation">
+                              <span className="relevance-icon">💡</span>
+                              <span className="relevance-text">{article.why_relevant}</span>
+                            </div>
+                          )}
+                          
+                          <div className="article-meta">
+                            <span className="article-date">
+                              {new Date(article.published_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          
+                          <a 
+                            href={article.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="read-more-btn premium"
+                          >
+                            <span>Read Full Article</span>
+                            <span className="arrow">→</span>
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="articles-footer">
+                      <div className="personalization-info">
+                        <h4>🎯 How we personalized this for you:</h4>
+                        <p>Our AI analyzed your interests in "{newsPreferences}" and selected the most relevant, high-quality articles from trusted sources.</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="coming-soon">
+                    <div className="coming-soon-icon">📰</div>
+                    <h4>Your News Feed is Ready!</h4>
+                    <p>Click "Refresh News" above to get your first personalized news articles.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
