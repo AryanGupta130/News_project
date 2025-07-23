@@ -12,6 +12,7 @@ const UserPreferences: React.FC<UserPreferencesProps> = ({ user, onLogout }) => 
   const [deliveryTime, setDeliveryTime] = useState<'morning' | 'afternoon' | 'evening'>('morning');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [firstName, setFirstName] = useState('');
 
   const handleSavePreferences = async () => {
     if (!newsInterests.trim()) {
@@ -55,6 +56,24 @@ const UserPreferences: React.FC<UserPreferencesProps> = ({ user, onLogout }) => 
       setIsLoading(false);
     }
   };
+  // Fetch user profile when component mounts
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/profile/${user.split('@')[0]}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profile && data.profile.firstName) {
+            setFirstName(data.profile.firstName);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   return (
     <div className="preferences-container">
@@ -65,7 +84,7 @@ const UserPreferences: React.FC<UserPreferencesProps> = ({ user, onLogout }) => 
             <p className="app-subtitle">Your personal news curator</p>
           </div>
           <div className="user-section">
-            <span className="welcome-text">Welcome, {user.split('@')[0]}!</span>
+            <span className="welcome-text">Welcome, {firstName || user.split('@')[0]}!</span>
             <button onClick={onLogout} className="logout-btn">
               Logout
             </button>

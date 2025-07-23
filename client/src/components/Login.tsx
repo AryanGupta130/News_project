@@ -10,6 +10,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess = () => {} }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -34,9 +35,35 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess = () => {} }) => {
 
     try {
       if (isSignUp) {
+        if (!firstName.trim()) {
+          setError('Please enter your first name');
+          setLoading(false);
+          return;
+        }
+
         // Create new account
         const result = await authService.register(email, password);
         if (result.success && result.user) {
+          // Save user profile
+          const response = await fetch('http://localhost:8080/api/users/profile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: email.split('@')[0],
+              profile: {
+                firstName: firstName.trim(),
+                email: email,
+                createdAt: new Date().toISOString()
+              }
+            }),
+          });
+
+          if (!response.ok) {
+            console.error('Failed to save user profile');
+          }
+
           onLoginSuccess(result.user.email || email);
         } else {
           setError(result.message);
@@ -89,6 +116,23 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess = () => {} }) => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="login-form">
+            {isSignUp && (
+              <div className="input-group">
+                <label htmlFor="firstName" className="input-label">
+                  First Name
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required={isSignUp}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+            )}
             <div className="input-group">
               <label htmlFor="email" className="input-label">
                 Email Address
