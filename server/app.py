@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, session, render_template, request, redirect, url_for
 from flask_cors import CORS
-from firestore import firestore_service  # Import our Firestore service
+from server.components.Firestore import firestore_service  # Import our Firestore service
 import os
 from dotenv import load_dotenv
 
