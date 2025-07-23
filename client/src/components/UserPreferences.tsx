@@ -8,8 +8,6 @@ interface UserPreferencesProps {
 
 const UserPreferences: React.FC<UserPreferencesProps> = ({ user, onLogout }) => {
   const [newsInterests, setNewsInterests] = useState('');
-  const [readingFormat, setReadingFormat] = useState<'summary' | 'full' | 'headlines'>('summary');
-  const [deliveryTime, setDeliveryTime] = useState<'morning' | 'afternoon' | 'evening'>('morning');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -27,8 +25,6 @@ const UserPreferences: React.FC<UserPreferencesProps> = ({ user, onLogout }) => 
       // Prepare the preferences object
       const preferences = {
         newsInterests: newsInterests.trim(),
-        readingFormat,
-        deliveryTime,
         updatedAt: new Date().toISOString()
       };
 
@@ -118,41 +114,6 @@ const UserPreferences: React.FC<UserPreferencesProps> = ({ user, onLogout }) => 
                 {newsInterests.length}/500 characters
               </div>
             </div>
-
-            <div className="form-row">
-              <div className="form-section">
-                <label htmlFor="format" className="form-label">
-                  How would you like to read your news?
-                </label>
-                <select
-                  id="format"
-                  value={readingFormat}
-                  onChange={(e) => setReadingFormat(e.target.value as 'summary' | 'full' | 'headlines')}
-                  className="form-select"
-                >
-                  <option value="summary">Quick summaries (2-3 sentences)</option>
-                  <option value="full">Detailed articles</option>
-                  <option value="headlines">Headlines only</option>
-                </select>
-              </div>
-
-              <div className="form-section">
-                <label htmlFor="delivery" className="form-label">
-                  When would you like to receive your news?
-                </label>
-                <select
-                  id="delivery"
-                  value={deliveryTime}
-                  onChange={(e) => setDeliveryTime(e.target.value as 'morning' | 'afternoon' | 'evening')}
-                  className="form-select"
-                >
-                  <option value="morning">Morning (8:00 AM)</option>
-                  <option value="afternoon">Afternoon (1:00 PM)</option>
-                  <option value="evening">Evening (6:00 PM)</option>
-                </select>
-              </div>
-            </div>
-
             <button
               onClick={handleSavePreferences}
               disabled={!newsInterests.trim() || isLoading}
